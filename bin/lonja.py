@@ -9,26 +9,9 @@ import requests
 from bs4 import BeautifulSoup
 import graphyte
 import logging
-
-
-# DECLARACION DE VARIABLES
-
-# Fichero de log:
-LOG_FILE = "/var/log/lonja/lonja.log"
-
-# Nivel de log (configurar NOTSET, DEBUG, INFO, WARNING, ERROR o CRITICAL):
-LOG_LEVEL = "INFO"
-
-# Direccion web:
-URL = "http://www.delalonjaalamesa.es/"
-
-# Tiempo de espera para obtener respuesta de la web (en segundos):
-TIMEOUT = 120
-
-# Datos del servidor de Graphite:
-GRAPHITE_SERVER = "127.0.0.1"
-GRAPHITE_PORT = 2003
-GRAPHITE_PREFIX = "datos.lonja"
+import json
+import sys
+import os
 
 
 # PROGRAMA PRINCIPAL
@@ -36,22 +19,36 @@ GRAPHITE_PREFIX = "datos.lonja"
 # Inicio:
 print()
 
+# Carga del fichero de configuración:
+script_path = os.path.dirname(sys.argv[0])
+with open(script_path + '/../config/config.json', 'r') as f:
+    config = json.load(f)
+log_level = config['DEFAULT']['LOG_LEVEL']
+log_file = config['DEFAULT']['LOG_FILE']
+url = config['DEFAULT']['URL']
+timeout = config['DEFAULT']['TIMEOUT']
+graphite_server = config['DEFAULT']['GRAPHITE_SERVER']
+graphite_port = config['DEFAULT']['GRAPHITE_PORT']
+graphite_prefix = config['DEFAULT']['GRAPHITE_PREFIX']
+
+
 # Configurar logger a fichero:
-logging.basicConfig(level=getattr(logging, LOG_LEVEL),
+logging.basicConfig(level=getattr(logging, log_level),
                     format="[%(asctime)s] [%(levelname)s] - %(message)s",
                     datefmt="%Y-%m-%d %H:%M:%S",
-                    filename=LOG_FILE,
+                    filename=log_file,
                     filemode='a')
-logging.info("Inicio del programa")
 
 # Configurar logger a stdout:
 console = logging.StreamHandler()
-console.setLevel(getattr(logging, LOG_LEVEL))
+console.setLevel(getattr(logging, log_level))
 console.setFormatter(logging.Formatter("[%(levelname)s] - %(message)s"))
 logging.getLogger('').addHandler(console)
 
+logging.info("Inicio del programa")
+
 # Descargar html de la web:
-index_html = requests.get(URL, timeout=TIMEOUT)
+index_html = requests.get(url, timeout=int(timeout))
 
 # Comprobacion del estado de la web:
 if index_html.status_code != requests.codes.ok:
@@ -76,7 +73,7 @@ else:
     logging.info("Productos encontrados: %s", len(product_list))
 
 # Obtencion de productos, precios y unidades, y envio a Graphite:
-graphyte.init(GRAPHITE_SERVER, port=GRAPHITE_PORT, prefix=GRAPHITE_PREFIX)
+graphyte.init(graphite_server, port=graphite_port, prefix=graphite_prefix)
 for product_obj in product_list:
     product_txt = product_obj.text.strip()
     name_tmp = product_txt.splitlines()[0]
@@ -85,7 +82,8 @@ for product_obj in product_list:
     price_tmp = product_txt.splitlines()[3]
     price_tmp_2 = price_tmp.strip("Precio: ")
     price_tmp_3 = price_tmp_2.replace(",", ".")
-    price = price_tmp_3.split()[0]
+    price_tmp_4 = price_tmp_3.split()[0]
+    price = price_tmp_4.replace("€", "")
     unit_tmp = product_txt.splitlines()[3]
     if len(unit_tmp.split()) == 4:
         unit = unit_tmp.split()[2] + unit_tmp.split()[3]

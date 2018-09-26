@@ -1,0 +1,11 @@
+{
+  "DEFAULT": {
+    "LOG_FILE": "/var/log/lonja/lonja.log",
+    "LOG_LEVEL": "INFO",
+    "URL": "http://www.delalonjaalamesa.es/",
+    "TIMEOUT": "120",
+    "GRAPHITE_SERVER": "127.0.0.1",
+    "GRAPHITE_PORT": "2003",
+    "GRAPHITE_PREFIX": "datos.lonja"
+  }
+}
