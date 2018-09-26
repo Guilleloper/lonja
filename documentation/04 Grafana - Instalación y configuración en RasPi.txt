@@ -1,0 +1,51 @@
+##################################################
+# GRAFANA - INSTALACIÓN Y CONFIGURACIÓN EN RASPI #
+##################################################
+
+(http://docs.grafana.org/installation/docker/)
+(https://github.com/grafana/grafana-docker/)
+
+- Crear volumen persistente:
+  # sudo docker volume create grafana-storage
+
+- Descargar un proyecto de GitHub que será usado como base para la creación del contenedor:
+  # cd
+  # git clone https://github.com/grafana/grafana-docker.git
+
+- Modificar Dockerfile para corregir errores:
+  # cd grafana-docker/
+  # view Dockerfile
+  ...
+  ARG GRAFANA_URL="https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-5.2.1.linux-armv7.tar.gz"
+  ...
+  RUN apt-get update && apt-get install -qq -y tar libfontconfig curl ca-certificates libc6-armhf-cross libc6-armhf-cross-dev && \
+  ...
+  RUN ln -s /usr/arm-linux-gnueabihf/lib/ld-linux-armhf.so.3 /lib/ld-linux-armhf.so.3 && \
+      ln -s /usr/arm-linux-gnueabihf/lib/libpthread.so.0 /lib/libpthread.so.0 && \
+      ln -s /usr/arm-linux-gnueabihf/lib/libdl.so.2 /lib/libdl.so.2 && \
+      ln -s /usr/arm-linux-gnueabihf/lib/libc.so.6 /lib/libc.so.6
+
+  EXPOSE 3000
+  ...
+
+- Crear imagen a partir de Dockerfile:
+  # sudo docker build -t guille/grafana .
+
+- Crear y arrancar contenedor a partir de la imagen creada:
+  # sudo docker run -d --name grafana --restart=always -p 3000:3000 -v grafana-storage:/var/lib/grafana guille/grafana
+
+- Modificar permisos de la base de datos creada:
+  # sudo chown 472:472 /var/lib/docker/volumes/grafana-storage/_data/grafana.db
+
+- Parar y arrancar el contenedor:
+  # sudo docker stop grafana
+  # sudo docker start grafana
+
+- Acceder a la aplicación:
+  Desde un navegador web -> http://raspi:3000 (admin/admin).
+
+- Realizar las siguientes acciones en Grafana:
+  Modificar credenciales del usuario admin.
+  Crear usuarios.
+  Crear datasource nuevo, apuntando a Graphite.
+  Crear/importar dashboards.

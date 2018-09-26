@@ -1,0 +1,47 @@
+###################################################
+# GRAPHITE - INSTALACIÓN Y CONFIGURACIÓN EN LOCAL #
+###################################################
+
+(https://github.com/graphite-project/docker-graphite-statsd)
+
+- Instalar docker:
+  # sudo apt-get install docker
+
+- Descargar y lanzar contenedor con Graphite:
+  # docker run -d --name graphite --restart=always -p 80:80 -p 2003-2004:2003-2004 -p 2023-2024:2023-2024 -p 8125:8125/udp -p 8126:8126 -p 8080:8080 graphiteapp/graphite-statsd
+
+- Prueba de conectividad con el frontal web:
+  Desde un navegador web -> http://127.0.0.1/dashboard
+
+- Lanzar una prueba de escritura en Graphite:
+  # while true; do echo -n "example:$((RANDOM % 100))|c" | nc -w 1 -u 127.0.0.1 8125; done
+  Desde un navegador web -> http://127.0.0.1/render?from=-10mins&until=now&target=stats.example
+
+- Detener Graphite:
+  # sudo docker stop graphite
+
+- Comprobar los ficheros de configuración de los que tira el contendor creado:
+  # sudo docker inspect graphite | egrep 'Source|Destination'
+
+- Modificar fichero storage-schemas.conf para configurar la granularidad y retención:
+  # sudo view /var/snap/docker/common/var-lib-docker/volumes/5b3e753a385f5d346654fd8283c9260fde5aa17b89e7952b2f4d76764160d671/_data/storage-schemas.conf
+  ...
+  [lonja_product_price]
+  pattern = ^datos\.lonja\.
+  retentions = 12h:20y
+    
+  [default_1min_for_1day]
+  ...
+
+- Modificar fichero storage-aggregation.conf para configurar el método de agregación:
+  # sudo view /var/snap/docker/common/var-lib-docker/volumes/5b3e753a385f5d346654fd8283c9260fde5aa17b89e7952b2f4d76764160d671/_data/
+  ...
+  [lonja_product_price]
+  pattern = ^datos\.lonja\.
+  xFilesFactor = 0.3
+  aggregationMethod = average
+  
+  [default_average]
+
+- Arrancar contenedor:
+  # sudo docker run graphite

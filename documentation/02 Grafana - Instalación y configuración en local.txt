@@ -1,0 +1,20 @@
+##################################################
+# GRAFANA - INSTALACIÓN Y CONFIGURACIÓN EN LOCAL #
+##################################################
+
+(http://docs.grafana.org/installation/docker/)
+
+- Crear volumen persistente:
+  # docker volume create grafana-storage
+
+- Descargar y arrancar contenedor:
+  # docker run -d --name grafana --restart=allways -p 3000:3000 -v grafana-storage:/var/lib/grafana grafana/grafana
+
+- Acceder a la aplicación:
+  Desde un navegador web -> http://127.0.0.1:3000 (admin/admin).
+
+- Realizar las siguientes acciones en Grafana:
+  Modificar credenciales del usuario admin.
+  Crear usuarios.
+  Crear datasource nuevo, apuntando a Graphite.
+  Crear/importar dashboards.

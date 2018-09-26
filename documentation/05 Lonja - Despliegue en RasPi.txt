@@ -1,0 +1,42 @@
+###############################
+# LONJA - DESPLIEGUE EN RASPI #
+###############################
+
+- Prepración de las ubicaciones para el software:
+  # mkdir /opt/lonja/bin
+  # mkdir /opt/lonja/config
+
+- Ubicar el script en la ubicación correspondiente:
+  # ls -rtl /opt/lonja/bin/lonja.py
+  -rw-r--r-- 1 pi pi 3327 jul  5 00:59 /opt/lonja/bin/lonja.py
+
+- Ubicar el fichero de configuración en la ubicación correspondiente:
+  # ls -rtl /opt/lonja/config/config.json
+  -rw-r--r-- 1 pi pi 261 jul  5 01:00 /opt/lonja/config/config.json
+
+- Prepración de las ubicaciones para los logs:
+  # sudo mkdir /var/log/lonja
+  # sudo chown pi:pi /var/log/lonja
+
+- Dar permisos de ejecución al script:
+  # sudo chmod 755 /opt/lonja/bin/lonja.py
+
+- Instalar dependiencias:
+  # sudo pip3.5 install requests beautifulsoup4 lxml graphyte
+
+- Configuración de la ejecución automática. Configuración del cron:
+  # sudo view /etc/cron.d/lonja
+  # Programacion para la ejecucion del script lonja
+  * */12 * * * pi /usr/bin/python3.5 /opt/lonja/bin/lonja.py
+  ...
+
+- Configuración de Logrotate para controlar los logs generados:
+  # sudo view /etc/logrotate.d/lonja
+  /var/log/lonja/lonja.log {
+    rotate 60
+    daily
+    compress
+    delaycompress
+    copytruncate
+    missingok
+  }

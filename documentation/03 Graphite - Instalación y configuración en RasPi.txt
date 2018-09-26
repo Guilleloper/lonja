@@ -1,0 +1,78 @@
+###################################################
+# GRAPHITE - INSTALACIÓN Y CONFIGURACIÓN EN RASPI #
+###################################################
+
+(https://github.com/phusion/baseimage-docker)
+(https://github.com/graphite-project/docker-graphite-statsd)
+
+- Ubicar software de Docker:
+  # md5sum /var/tmp/docker-ce_18.03.1~ce-0~debian_armhf.deb
+  b1195525199950b4ee47517ec77ae292  /var/tmp/docker-ce_18.03.1~ce-0~debian_armhf.deb
+
+- Instalar el paquete de Docker:
+  # sudo dpkg -i /var/tmp/docker-ce_18.03.1~ce-0~debian_armhf.deb
+
+- Descargar un proyecto de GitHub que será usado como base para la creación de la imagen, que a su vez será la base para la creación del contenedor:
+  # cd
+  # git clone https://github.com/phusion/baseimage-docker.git
+
+- Crear imagen "phusion/baseimage:0.10.1":
+  # cd baseimage-docker
+  # make file
+
+- Descargar un proyecto de GitHub que será usado como base para la creación del contenedor:
+  # cd
+  # git clone https://github.com/graphite-project/docker-graphite-statsd.git
+
+- Crear imagen a partir de Dockerfile:
+  # cd docker-graphite-statsd/
+  # sudo docker build -t guille/graphite-statsd --build-arg CONTAINER_TIMEZONE=Europe/Madrid .
+
+- Crear volúmenes persistentes:
+  # sudo docker volume create graphite-conf
+  # sudo docker volume create graphite-storage
+
+- Crear y arrancar contenedor a partir de la imagen creada:
+  # sudo docker run -d --name graphite --restart=always \
+  -p 80:80 -p 2003-2004:2003-2004 -p 2023-2024:2023-2024 -p 8125:8125/udp -p 8126:8126 -p 8080:8080 \
+  -v graphite-conf:/opt/graphite/conf -v graphite-storage:/opt/graphite/storage \
+  guille/graphite-statsd
+
+- Probar correcta escritura y visualización:
+  # while true; do echo -n "example:$((RANDOM % 100))|c" | nc -w 1 -u 127.0.0.1 8125; done
+  Desde un navegador web -> http://raspi/dashboard
+  Desde un navegador web -> http://raspi/render?from=-10mins&until=now&target=stats.example
+
+- Acceder a la consola de adminitración de Django y cambiar las credenciales por defecto (root/root):
+  Desde un navegador web -> http://raspi/admin/
+
+- Detener el contenedor para modificar la configuración:
+  # sudo docker stop graphite
+
+- Modificar fichero storage-schemas.conf para configurar la granularidad y retención:
+  # sudo view /var/lib/docker/volumes/graphite-conf/_data/storage-schemas.conf
+  ...
+  [lonja_product_price]
+  pattern = ^datos\.lonja\.
+  retentions = 12h:20y
+    
+  [default_1min_for_1day]
+  ...
+
+- Modificar fichero storage-aggregation.conf para configurar el método de agregación:
+  # sudo view /var/lib/docker/volumes/graphite-conf/_data/storage-aggregation.conf
+  ...
+  [lonja_product_price]
+  pattern = ^datos\.lonja\.
+  xFilesFactor = 0.3
+  aggregationMethod = average
+  
+  [default_average]
+  ...
+
+- Borrar ficheros whisper anteriores:
+  # sudo find /var/lib/docker/volumes/graphite-storage/_data/whisper -name "*.wsp" -exec rm -fr {} \;
+
+- Arrancar el contenedor:
+  # sudo docker start graphite
+
